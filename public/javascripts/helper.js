@@ -69,7 +69,7 @@ var helper = {
             return price.toFixed(2);
         } catch(e) {
             console.error("error e", e)
-            return e;
+            return 0;
         }
     },
 

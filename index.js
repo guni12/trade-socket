@@ -63,6 +63,22 @@ app.post("/insert",
 });
 
 
+// insert a JSON object with new chat-content
+app.get("/list",
+    async (req, res) => {
+    console.log("HTTP request on " + req.url);
+    console.log(req.body);
+    try {
+        let result = await helper.findInCollection(dsn, "dist", req.body);
+        console.log(result);
+        res.json(result);
+    } catch (err) {
+        //console.log(err);
+        res.json(err);
+    }
+});
+
+
 io.on('connection', function(socket) {
     var addedUser = false;
     console.log('a user connected');
