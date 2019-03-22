@@ -166,7 +166,11 @@ setInterval(function () {
 
 async function updatePercent() {
     let arr = await helper.findInCollection(mongo, dsn, 'dist', {}, {}, 0);
-    price = await helper.updateFour(mongo, dsn, arr, percent);
+    if (arr.length > 0) {
+        price = await helper.updateFour(mongo, dsn, arr, percent);
+    } else {
+        price = 0;
+    }
 }
 
 
