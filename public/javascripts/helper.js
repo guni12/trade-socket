@@ -132,7 +132,7 @@ var helper = {
             const col = await db.collection(colName);
             const res = await col.insertOne(parameters);
             await client.close();
-            console.log(res);
+            console.log("res.result", res.result);
             return res;
         } catch(e) {
             console.error(e)

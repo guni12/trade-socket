@@ -56,6 +56,7 @@ app.post("/insert",
         let result = await helper.addToCollection(dsn, "?", req.body);
         console.log(result);
         res.json(result);
+        //res.send({ msg: "hello" });
     } catch (err) {
         //console.log(err);
         res.json(err);
@@ -71,6 +72,7 @@ app.get("/drop",
         let result = await helper.dropCollection(dsn, "dist");
         console.log(result);
         res.json(result);
+        res.send({ msg: "hello" });
     } catch (err) {
         console.log(err);
         res.json(err);
@@ -84,7 +86,7 @@ app.get("/list",
     console.log("HTTP request on " + req.url);
     console.log(req.body);
     try {
-        let result = await helper.findInCollection(dsn, "dist", {}, {}, 0);
+        let result = await helper.findInCollection(mongo, dsn, "dist", {}, {}, 0);
         console.log(result);
         res.json(result);
     } catch (err) {
