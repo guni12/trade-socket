@@ -57,14 +57,20 @@ var helper = {
      * @return {string} the updated json
      */
     updateFour: async function (mongo, dsn, arr, val) {
-        let removed = {'one': arr[0].two, 'two': arr[0].three, 'three': arr[0].four, 'four': val};
-        let id = {'_id': arr[0]._id};
-        console.log("updated arr", removed);
-        await helper.updateCollection(mongo, dsn, 'dist', arr[0]._id, removed);
+        console.log(arr);
+        try {
+            let removed = {'one': arr[0].two, 'two': arr[0].three, 'three': arr[0].four, 'four': val};
+            let id = {'_id': arr[0]._id};
+            console.log("updated arr", removed);
+            await helper.updateCollection(mongo, dsn, 'dist', arr[0]._id, removed);
 
-        let price = await helper.sumValues(removed);
-        price = price / 4;
-        return price.toFixed(2);
+            let price = await helper.sumValues(removed);
+            price = price / 4;
+            return price.toFixed(2);
+        } catch(e) {
+            console.error("error e", e)
+            return e;
+        }
     },
 
 
