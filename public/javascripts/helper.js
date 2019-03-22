@@ -15,18 +15,20 @@ var helper = {
         var time = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
         dist["time"] = time;
         dist["perc"] = helper.randomPercent(60, 120);
+        dist["date"] = date.toLocaleDateString();
         return dist;
     },
 
-    getHouse: function (house, min, max) {
+    getBattery: function (battery, min, max) {
         let date = new Date();
         var hours = date.getHours();
         var minutes = "0" + date.getMinutes();
         var seconds = "0" + date.getSeconds();
         var time = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
-        house["time"] = time;
-        house["perc"] = helper.randomPercent(min, max);
-        return house;
+        battery["time"] = time;
+        battery["perc"] = helper.randomPercent(min, max);
+        battery["date"] = date.toLocaleDateString();
+        return battery;
     },
 
     getDevices: function (dev) {
@@ -87,13 +89,17 @@ var helper = {
      * @return {Promise<array>} The resultset as an array.
      */
     findInCollection: async function (mongo, dsn, colName, criteria, projection, limit) {
-        const client  = await mongo.connect(dsn, { useNewUrlParser: true });
-        const db = await client.db();
-        const col = await db.collection(colName);
-        const res = await col.find(criteria, projection).limit(limit).toArray();
-        await client.close();
-        //console.log("helper", res);
-        return res;
+        try {
+            const client = await mongo.connect(dsn,{ useNewUrlParser: true });
+            const db = await client.db();
+            const col = await db.collection(colName);
+            const res = await col.find(criteria, projection).limit(limit).toArray();
+            await client.close();
+            return res;
+        } catch(e) {
+            console.error("error e", e)
+            return e;
+        }
     },
 
 
@@ -114,14 +120,18 @@ var helper = {
      * @return {Promise<array>} The resultset as an array.
      */
     addToCollection: async function (dsn, colName, parameters) {
-        const client  = await mongo.connect(dsn, { useNewUrlParser: true });
-        const db = await client.db();
-        const col = await db.collection(colName);
-        const res = await col.insertOne(parameters);
-
-        await client.close();
-        console.log(res);
-        return res;
+        try {
+            const client = await mongo.connect(dsn,{ useNewUrlParser: true });
+            const db = await client.db();
+            const col = await db.collection(colName);
+            const res = await col.insertOne(parameters);
+            await client.close();
+            console.log(res);
+            return res;
+        } catch(e) {
+            console.error(e)
+            return e;
+        }
     },
 
 
@@ -141,16 +151,21 @@ var helper = {
      * @return {Promise<array>} The resultset as an array.
      */
     updateCollection: async function (mongo, dsn, colName, id, parameters) {
-        const client  = await mongo.connect(dsn, { useNewUrlParser: true });
-        const db = await client.db();
-        const col = await db.collection(colName);
-        const ObjectId = require('mongodb').ObjectID;
-        const res = await col.updateOne({ _id: ObjectId(id)}, {$set: parameters}, { upsert: true}).catch(function (reason) {
-            console.log('Unable to connect to the mongodb instance. Error: ', reason);
-        });
-
-        await client.close();
-        return res;
+        try {
+            const client = await mongo.connect(dsn,{ useNewUrlParser: true });
+            const db = await client.db();
+            const col = await db.collection(colName);
+            const ObjectId = require('mongodb').ObjectID;
+            const res = await col.updateOne({ _id: ObjectId(id)}, {$set: parameters}, { upsert: true}).catch(function (reason) {
+                console.log('Unable to connect to the mongodb instance. Error: ', reason);
+            });
+            await client.close();
+            console.log("updateCollection res.result", res.result);
+            return res;
+        } catch(e) {
+            console.error(e)
+            return e;
+        }
     },
 
 

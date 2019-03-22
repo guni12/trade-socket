@@ -9,8 +9,8 @@ const mongo = require("mongodb").MongoClient;
 const dsn =  process.env.DBWEBB_DSN || "mongodb://localhost:27017/dist";
 const helper = require("./public/javascripts/helper.js");
 
-io.set('heartbeat timeout', 5000);
-io.set('heartbeat interval', 2000);
+io.set('heartbeat timeout', 10000);
+io.set('heartbeat interval', 5000);
 
 app.use(express.static("public"));
 app.use('/js', express.static(path.resolve('dist')));
@@ -30,14 +30,6 @@ var car = {
     "price": 0,
 };
 
-var varmepump = {
-    name: "Heat Pump",
-    date: date.toLocaleDateString(),
-    time: date.getTime(),
-    v1: 0,
-    v2: 0,
-    v3: 0,
-};
 
 var dist = {
     name: "Network Station",
@@ -47,17 +39,6 @@ var dist = {
     "price": 0,
 }
 
-var house = {
-    name: "House",
-    date: date.toLocaleDateString(),
-    time: date.getTime(),
-    "perc": 0,
-    "price": 0,
-}
-
-
-
-var devices = [varmepump];
 
 var connectedUsers = [];
 
@@ -110,7 +91,7 @@ io.on('connection', function(socket) {
         connectedUsers[msg.id]['room'] = msg.room;
         connectedUsers[msg.id]['email'] = msg.email;
         console.log(connectedUsers[msg.id]['room']);
-        socket.broadcast.to(connectedUsers[msg.id]['room']).emit('connectedUsers', msg.email + ", Välkommen!");
+        socket.broadcast.to(connectedUsers[msg.id]['room']).emit('private', msg.email + ", Välkommen!");
     });
 
 
@@ -156,32 +137,15 @@ setInterval(function () {
     console.log("price", price);
     dist["price"] = price;
     io.emit("dist", station);
-}, 10000);
+}, 12000);
 
 setInterval(function () {
     connectedUsers.forEach(function(val, key) {
-        let leaf = helper.getHouse(car, 0, 24);
+        let leaf = helper.getBattery(car, 0, 24);
         console.log("val.email, car", key, val.email);
         val.broadcast.to(val.room).emit('car', leaf);
     });
 }, 8000);
-
-setInterval(function () {
-    connectedUsers.forEach(function(val, key) {
-        let habitat = helper.getHouse(house, 10, 100);
-        console.log("val.email, house", key, val.email);
-        val.broadcast.to(val.room).emit('house', habitat);
-    });
-}, 5000);
-
-setInterval(function () {
-    let nodes = helper.getDevices(devices);
-    io.emit("devices", nodes);
-}, 50);
-
-setInterval(function(){
-    io.sockets.in('global').emit('roomChanged', { chicken: 'tasty' });
-}, 1000);
 
 
 async function updatePercent() {
