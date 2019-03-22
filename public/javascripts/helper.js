@@ -125,7 +125,7 @@ var helper = {
      *
      * @return {Promise<array>} The resultset as an array.
      */
-    addToCollection: async function (dsn, colName, parameters) {
+    addToCollection: async function (mongo, dsn, colName, parameters) {
         try {
             const client = await mongo.connect(dsn,{ useNewUrlParser: true });
             const db = await client.db();

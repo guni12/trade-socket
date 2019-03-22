@@ -53,11 +53,26 @@ app.post("/insert",
     console.log("HTTP request on " + req.url);
     console.log(req.body);
     try {
-        let result = await helper.addToCollection(dsn, "dist", req.body);
+        let result = await helper.addToCollection(dsn, "?", req.body);
         console.log(result);
         res.json(result);
     } catch (err) {
         //console.log(err);
+        res.json(err);
+    }
+});
+
+
+// Return a JSON object with list of all documents within the collection.
+app.get("/drop",
+    async (req, res) => {
+    console.log("HTTP request on " + req.url);
+    try {
+        let result = await helper.dropCollection(dsn, "dist");
+        console.log(result);
+        res.json(result);
+    } catch (err) {
+        console.log(err);
         res.json(err);
     }
 });
@@ -69,7 +84,7 @@ app.get("/list",
     console.log("HTTP request on " + req.url);
     console.log(req.body);
     try {
-        let result = await helper.findInCollection(dsn, "dist", req.body);
+        let result = await helper.findInCollection(dsn, "dist", {}, {}, 0);
         console.log(result);
         res.json(result);
     } catch (err) {
@@ -169,7 +184,7 @@ async function updatePercent() {
     if (arr.length > 0) {
         price = await helper.updateFour(mongo, dsn, arr, percent);
     } else {
-        price = 0;
+        await helper.addToCollection(mongo, dsn, 'dist', {'one': 0, 'two': 0, 'three': 0, 'four': 0});
     }
 }
 
