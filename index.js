@@ -11,6 +11,7 @@ const helper = require("./public/javascripts/helper.js");
 
 io.set('heartbeat timeout', 10000);
 io.set('heartbeat interval', 5000);
+io.origins('*:*');
 
 app.use(express.static("public"));
 app.use('/js', express.static(path.resolve('dist')));
@@ -20,116 +21,173 @@ app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x
 
 let date = new Date();
 let percent = 0;
-let price = 0;
+let price = 80;
+let numUsers = 0;
 
 var car = {
     name: "Electric Car",
     date: date.toLocaleDateString(),
     time: date.getTime(),
-    "perc": 0,
+    "perc": 50,
     "price": 0,
 };
 
 
 var dist = {
-    name: "Network Station",
+    name: "Electrical Station",
     date: date.toLocaleDateString(),
     time: date.getTime(),
     "perc": 0,
-    "price": 0,
-}
+    "price": price,
+};
 
 
-var connectedUsers = [];
+var users  = {};
 
 app.get('/', function(req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 
 
-// insert a JSON object with new chat-content
-app.post("/insert",
-    async (req, res) => {
-    console.log("HTTP request on " + req.url);
-    console.log(req.body);
-    try {
-        let result = await helper.addToCollection(dsn, "?", req.body);
-        console.log(result);
-        res.json(result);
-        //res.send({ msg: "hello" });
-    } catch (err) {
-        //console.log(err);
-        res.json(err);
-    }
-});
-
-
 // Return a JSON object with list of all documents within the collection.
 app.get("/drop",
     async (req, res) => {
-    console.log("HTTP request on " + req.url);
-    try {
-        let result = await helper.dropCollection(dsn, "dist");
-        console.log(result);
-        res.json(result);
-        res.send({ msg: "hello" });
-    } catch (err) {
-        console.log(err);
-        res.json(err);
+        console.log("HTTP request on " + req.url);
+        try {
+            let result = await helper.dropCollection(mongo, dsn, "dist");
+
+            res.json(result);
+        } catch (err) {
+            console.log(err);
+            res.json(err);
+        }
     }
-});
+);
+
+// Return a JSON object with list of all documents within the collection.
+app.get("/droptrade",
+    async (req, res) => {
+        console.log("HTTP request on " + req.url);
+        try {
+            let result = await helper.dropCollection(mongo, dsn, "trade");
+
+            res.json(result);
+        } catch (err) {
+            console.log(err);
+            res.json(err);
+        }
+    }
+);
 
 
 // insert a JSON object with new chat-content
 app.get("/list",
     async (req, res) => {
-    console.log("HTTP request on " + req.url);
-    console.log(req.body);
-    try {
-        let result = await helper.findInCollection(mongo, dsn, "dist", {}, {}, 0);
-        console.log(result);
-        res.json(result);
-    } catch (err) {
-        //console.log(err);
-        res.json(err);
+        console.log("HTTP request on " + req.url);
+        try {
+            let result = await helper.findInCollection(mongo, dsn, "dist", {}, {}, 0);
+
+            console.log(result);
+            res.json(result);
+        } catch (err) {
+            //console.log(err);
+            res.json(err);
+        }
     }
-});
+);
+
+
+// insert a JSON object with new chat-content
+app.get("/listtrade",
+    async (req, res) => {
+        console.log("HTTP request on " + req.url);
+        try {
+            let result = await helper.findInCollection(mongo, dsn, "trade", {}, {}, 0);
+
+            console.log(result);
+            res.json(result);
+        } catch (err) {
+            //console.log(err);
+            res.json(err);
+        }
+    }
+);
 
 
 io.on('connection', function(socket) {
     var addedUser = false;
+
     console.log('a user connected');
 
-    socket.on('subscribe', function(room) {
-        console.log("bara room", room);
-        console.log('joining room', room.room);
-        socket.join(room.room, () => {
-            io.to(room.room, 'a new user has joined the room');
-            var roomKeys = Object.keys(socket.rooms);
-            var socketIdIndex = roomKeys.indexOf( socket.id );
-            var rooms = roomKeys.splice( socketIdIndex, 1 );
-            console.log("rooms: ", rooms);
-        });
-    });
+    var userId = socket.handshake.query.userid;
 
-    socket.on('unsubscribe', function(data) {
-        socket.leave(data.room);
-    });
+    users[userId] = socket;
+    users[userId]['email'] = socket.handshake.query.email;
+    console.log(socket.handshake.query.userid);
+    users[userId].emit('private', "Testar private to userid: " + userId);
 
+    let criteria = {email: socket.handshake.query.email};
 
-    socket.on('dist message', function(msg){
-        console.log('id: ' + msg.id + ", email:" + msg.email);
-        console.log('sending room post', msg.room);
-        connectedUsers[msg.id] = socket;
-        connectedUsers[msg.id]['room'] = msg.room;
-        connectedUsers[msg.id]['email'] = msg.email;
-        console.log(connectedUsers[msg.id]['room']);
-        socket.broadcast.to(connectedUsers[msg.id]['room']).emit('private', msg.email + ", Välkommen!");
+    checkOrStart(criteria, socket.handshake.query.userid, socket.handshake.query.email);
+    tradeInfo();
+
+    socket.on('trade', function(msg) {
+        console.log('trade', price, msg);
+        let criteria = {email: msg.email};
+
+        try {
+            let res = getTradeData(criteria);
+
+            res.then(function(result) {
+                console.log("trade try -  res: ", result);
+                if (result.length == 0) {
+                    checkOrStart(criteria, msg.uid, msg.email);
+                } else {
+                    console.log("Data finns", msg.email);
+                    let depa = (parseFloat(result[0].depa) + parseFloat(msg.insert));
+                    let buy = parseFloat(msg.buy);
+                    let sell = parseFloat(msg.sell);
+
+                    if (parseFloat(car['perc']) >= msg.sell) {
+                        car['perc'] = parseFloat(car['perc']) - sell;
+                        depa = depa + (sell * price);
+                    }
+
+                    if (depa - (buy * price) > 0 && (parseFloat(car['perc']) + buy) <= 100) {
+                        depa = depa - (buy * price);
+                        car['perc'] = (parseFloat(car['perc']) + buy);
+                    }
+                    let leaf = helper.getBattery(car);
+                    let upd2 = {
+                        'uid': msg.uid,
+                        'depa': depa,
+                        'email': msg.email,
+                        'insert': msg.insert,
+                        'buy': msg.buy,
+                        'sell': msg.sell,
+                        'price': price,
+                        'date': msg.date,
+                        'time': msg.time,
+                        'car': leaf
+                    };
+                    let res4 = updateTradeData(result[0]._id, upd2);
+
+                    res4.then(function() {
+                        users[msg.uid].emit('private trade', {
+                            'res': upd2,
+                        });
+                        users[msg.uid].emit('car', leaf);
+                    });
+                }
+            });
+        } catch (e) {
+            console.log("trade catch e: ", e);
+        }
     });
 
 
     socket.on('add user', (username) => {
-        if (addedUser) return;
+        if (addedUser) {return;}
         console.log(username);
 
         // we store the username in the socket session for this client
@@ -159,38 +217,108 @@ io.on('connection', function(socket) {
         console.log('user disconnected');
         console.log(reason);
     });
-    //setTimeout(() => socket.disconnect(true), 120000);
+    //setTimeout(() => socket.disconnect(true), 1200);
 });
 
 setInterval(function () {
     let station = helper.getDist(dist);
+
     percent = station.perc;
     //console.log(percent);
-    updatePercent();
+    //updatePercent();
+    updatePrice(percent);
     console.log("price", price);
     dist["price"] = price;
     io.emit("dist", station);
 }, 12000);
 
-setInterval(function () {
-    connectedUsers.forEach(function(val, key) {
-        let leaf = helper.getBattery(car, 0, 24);
-        console.log("val.email, car", key, val.email);
-        val.broadcast.to(val.room).emit('car', leaf);
-    });
-}, 8000);
+setInterval(tradeInfo, 5000);
 
+function tradeInfo() {
+    const entries = Object.entries(users);
 
-async function updatePercent() {
-    let arr = await helper.findInCollection(mongo, dsn, 'dist', {}, {}, 0);
-    if (arr.length > 0) {
-        price = await helper.updateFour(mongo, dsn, arr, percent);
+    console.log("info", price);
+    for (const [user] of entries) {
+        let criteria = {email: users[user]['email']};
+        let info = getTradeData(criteria);
+
+        info.then(function(result) {
+            //console.log("user, info", user, result);
+            //console.log("old info.car", result[0].car);
+            users[user].emit('private trade', {
+                'res': result,
+            });
+            users[user].emit('car', result[0].car);
+        });
+    }
+}
+
+function updatePrice(amp) {
+    console.log("amp", amp);
+    if (amp > 80 && amp < 100) {
+        price = 2;
+    } else if (amp > 100 && amp < 120) {
+        price = 3;
     } else {
-        await helper.addToCollection(mongo, dsn, 'dist', {'one': 0, 'two': 0, 'three': 0, 'four': 0});
+        price = 1;
+    }
+}
+
+
+async function getTradeData(criteria) {
+    let arr = await helper.findInCollection(mongo, dsn, 'trade', criteria, {}, 0);
+
+    return arr;
+}
+
+
+async function updateTradeData(id, criteria) {
+    let arr = await helper.updateCollection2(mongo, dsn, 'trade', id, criteria);
+
+    return arr;
+}
+
+async function checkOrStart(criteria, uid, email) {
+    try {
+        let res = getTradeData(criteria);
+
+        res.then(function(result) {
+            if (result.length == 0) {
+                let leaf = helper.getBattery(car);
+                let upd = {
+                    'uid': uid,
+                    'email': email,
+                    'depa': 0,
+                    'insert': 0,
+                    'buy': 0,
+                    'sell': 0,
+                    'price': 0,
+                    'date': leaf.date,
+                    'time': leaf.time,
+                    'car': leaf
+                };
+                let test = helper.addToCollection(mongo, dsn, "trade", upd);
+
+                test.then(function(result3) {
+                    if (result3) {
+                        let res2 = getTradeData(criteria);
+
+                        res2.then(function() {
+                            users[uid].emit('private trade', {
+                                'res': upd,
+                            });
+                            users[uid].emit('car', leaf);
+                        });
+                    }
+                });
+            }
+        });
+    } catch (e) {
+        console.log("init user catch e: ", e);
     }
 }
 
 
 http.listen(3200, function() {
-   console.log('listening on *:3200');
+    console.log('listening on *:3200');
 });

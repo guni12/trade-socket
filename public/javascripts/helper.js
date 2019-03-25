@@ -1,8 +1,4 @@
 var helper = {
-    returnRandomFloat: function (min, max) {
-        return (Math.random() * (max - min) + min).toFixed(2);
-    },
-
     randomPercent: function (min, max) {
         return (Math.random() * (max - min) + min).toFixed(1);
     },
@@ -13,69 +9,23 @@ var helper = {
         var minutes = "0" + date.getMinutes();
         var seconds = "0" + date.getSeconds();
         var time = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
+
         dist["time"] = time;
         dist["perc"] = helper.randomPercent(60, 120);
         dist["date"] = date.toLocaleDateString();
         return dist;
     },
 
-    getBattery: function (battery, min, max) {
+    getBattery: function (battery) {
         let date = new Date();
         var hours = date.getHours();
         var minutes = "0" + date.getMinutes();
         var seconds = "0" + date.getSeconds();
         var time = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
+
         battery["time"] = time;
-        battery["perc"] = helper.randomPercent(min, max);
         battery["date"] = date.toLocaleDateString();
         return battery;
-    },
-
-    getDevices: function (dev) {
-        let date = new Date();
-        var hours = date.getHours();
-        var minutes = "0" + date.getMinutes();
-        var seconds = "0" + date.getSeconds();
-        var time = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
-        dev.map((item) => {
-            item["time"] = time;
-            item["v1"] = helper.returnRandomFloat(204, 237.1);
-            item["v2"] = helper.returnRandomFloat(205, 238.3);
-            item["v3"] = helper.returnRandomFloat(201.7, 239.3);
-            return item;
-        });
-        return dev;
-    },
-
-    // removefirst arr.shift(), add last arr.push();
-    /**
-     * Remove first and add last in the four percent values array
-     *
-     * @param {obj} arr the arr to update
-     * @param {val}     string the latest percent value
-     *
-     * @return {string} the updated json
-     */
-    updateFour: async function (mongo, dsn, arr, val) {
-        console.log(arr);
-        try {
-            let removed = {'one': arr[0].two, 'two': arr[0].three, 'three': arr[0].four, 'four': val};
-            let id = {'_id': arr[0]._id};
-            console.log("updated arr", removed);
-            await helper.updateCollection(mongo, dsn, 'dist', arr[0]._id, removed);
-
-            let price = await helper.sumValues(removed);
-            price = price / 4;
-            return price.toFixed(2);
-        } catch(e) {
-            console.error("error e", e)
-            return 0;
-        }
-    },
-
-
-    sumValues: async function (obj) {
-        return Object.keys(obj).reduce((sum,key)=>sum+parseFloat(obj[key]||0),0);
     },
 
 
@@ -96,14 +46,15 @@ var helper = {
      */
     findInCollection: async function (mongo, dsn, colName, criteria, projection, limit) {
         try {
-            const client = await mongo.connect(dsn,{ useNewUrlParser: true });
+            const client = await mongo.connect(dsn, { useNewUrlParser: true });
             const db = await client.db();
             const col = await db.collection(colName);
             const res = await col.find(criteria, projection).limit(limit).toArray();
+
             await client.close();
             return res;
-        } catch(e) {
-            console.error("error e", e)
+        } catch (e) {
+            console.error("error e", e);
             return e;
         }
     },
@@ -127,16 +78,17 @@ var helper = {
      */
     addToCollection: async function (mongo, dsn, colName, parameters) {
         try {
-            const client = await mongo.connect(dsn,{ useNewUrlParser: true });
+            const client = await mongo.connect(dsn, { useNewUrlParser: true });
             const db = await client.db();
             const col = await db.collection(colName);
             const res = await col.insertOne(parameters);
+
             await client.close();
             console.log("res.result", res.result);
-            return res;
-        } catch(e) {
-            console.error(e)
-            return e;
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
         }
     },
 
@@ -158,18 +110,49 @@ var helper = {
      */
     updateCollection: async function (mongo, dsn, colName, id, parameters) {
         try {
-            const client = await mongo.connect(dsn,{ useNewUrlParser: true });
+            const client = await mongo.connect(dsn, { useNewUrlParser: true });
             const db = await client.db();
             const col = await db.collection(colName);
             const ObjectId = require('mongodb').ObjectID;
-            const res = await col.updateOne({ _id: ObjectId(id)}, {$set: parameters}, { upsert: true}).catch(function (reason) {
+            const res = await col.updateOne(
+                { _id: ObjectId(id)},
+                {$set: parameters},
+                { upsert: true}
+            ).catch(function (reason) {
                 console.log('Unable to connect to the mongodb instance. Error: ', reason);
             });
+
             await client.close();
             console.log("updateCollection res.result", res.result);
             return res;
-        } catch(e) {
-            console.error(e)
+        } catch (e) {
+            console.error(e);
+            return e;
+        }
+    },
+
+
+    updateCollection2: async function (mongo, dsn, colName, id, parameters) {
+        try {
+            const client = await mongo.connect(dsn, { useNewUrlParser: true });
+            const db = await client.db();
+            const col = await db.collection(colName);
+            const ObjectId = require('mongodb').ObjectID;
+
+            console.log("update2: ", id, ObjectId(id));
+            const res = await col.findOneAndUpdate(
+                {_id: id},
+                {$set: parameters},
+                {returnOriginal: false, upsert: true}
+            ).catch(function (reason) {
+                console.log('Unable to connect to the mongodb instance. Error: ', reason);
+            });
+
+            await client.close();
+            console.log("updateCollection2 res.result", res);
+            return res;
+        } catch (e) {
+            console.error(e);
             return e;
         }
     },
@@ -179,11 +162,12 @@ var helper = {
      *
      *
      */
-    dropCollection: async function (dsn, colName) {
+    dropCollection: async function (mongo, dsn, colName) {
         const client  = await mongo.connect(dsn, { useNewUrlParser: true });
         const db = await client.db();
         const col = await db.collection(colName);
-        const res = await col.drop({ writeConcern: "majority" });
+
+        await col.drop({ writeConcern: "majority" });
     }
 };
 
