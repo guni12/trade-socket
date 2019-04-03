@@ -32,8 +32,8 @@ It is also possible to empty the collections via
 
 ### How does it work?
 
-After some detours, basically because I am a newbee at Vue.js, I now find the communication working quite stable. It is possible to login and continue on your transactions from another day. Amchart.js version 4 is used for displaying the gauge-meters, frontend, and is quick to render and rewrite.
+After some detours, basically because I am a newbie at Vue.js, I now find the communication working quite stable. It is possible to login and continue on your transactions from another day. Amchart.js version 4 is used for displaying the gauge-meters, frontend, and is quick to render and rewrite.
 
-### trade-socket together with backend and frontend
+## trade-socket together with backend and frontend
 
 This platform was created (together with [trade-express](https://github.com/guni12/trade-express) and [trade-vue](https://github.com/guni12/trade-vue)) as my final project at [Blekinge Tekniska Högskola](https://www.bth.se/eng/) for the course Ramverk2. The backend application handles secure login services and some text content, and the frontend application creates the visual experience containing charts.
