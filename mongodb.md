@@ -18,7 +18,7 @@ Do you have to choose? Both are free and open-source, both are multi platform, b
 
 ### Introduction
 
-According to a survey done by [Scalegrid](https://dev.to/scalegrid/2019-database-trends--sql-vs-nosql-top-databases-single-vs-multiple-database-use-1nma) at [DeveloperWeek](https://www.developerweek.com/) 2019, MySQL is the dominating database of choise by developers at 38.9%, closely followed by MongoDB at 24.6%. Half of their respondants use a combination of SQL and NoSQL systems in their projects. And again, the clear winner amongst combinations of database types was MySQL + MongoDB with 34.15%.
+According to a survey done by [Scalegrid](https://dev.to/scalegrid/2019-database-trends--sql-vs-nosql-top-databases-single-vs-multiple-database-use-1nma) at [DeveloperWeek](https://www.developerweek.com/) 2019, MySQL is the dominating database of choice by developers at 38.9%, closely followed by MongoDB at 24.6%. Half of their respondants use a combination of SQL and NoSQL systems in their projects. And again, the clear winner amongst combinations of database types was MySQL + MongoDB with 34.15%.
 
 ### MongoDB
 
@@ -42,7 +42,7 @@ MySQL has a high reputation for reliable data protection, high availability, and
 
 ### An example
 
-Storing tradingdata for a customer in a table could look like:
+Storing trading-data for a customer in a table could look like this:
 
 | id | name | email         | account | date         |
 | -- | ---- | ------------- | ------- | ------------ |
@@ -65,28 +65,22 @@ MongoDB with JSON could expand the info above:
 }
 ```
 
-This (or any) info is easily stored in a collection and means that you do not have to go through schema migrations anymore. All the data for an entity is stored in a single document. Working with data as flexible JSON documents in MongoDB has accelerated development cycles by 4 to 5 times. You do have to think about data consistency, though.
+This (or any) info is easily stored in a collection and means that you do not have to go through schema migrations anymore. All the data for an entity is stored in a single document. Working with data as flexible JSON documents in MongoDB, has accelerated development cycles by 4 to 5 times. You do have to think about data consistency, though.
 
 MongoDB uses un-Structured Query Language for communication with the document whilst MySQL uses Structured Query Language SQL for database communication.
 
 | MySQL | MongoDB |
 | ----- | ------- |
-| <code>INSERT INTO trade (<br />id, name, email, account, date<br />)<br />VALUES (5, 'Doe', 'doe@doe.com',<br />200, '2020-03-21');</code> | <code>db.trade.insert({<br />id: 5,<br />name: 'Doe',<br />account: 200,<br />date: '2020-03-21'});</code> |
-| <code>UPDATE trade<br />SET account = 500<br />WHERE id = 5</code> | <code>db.trade.update(<br />{id: 5},<br />{ $set: {account: 500}});</code> |
+| <code>INSERT INTO trade (<br />id, name, email, account, date<br />)<br /> VALUES (5, 'Doe', 'doe@doe.com',<br />200, '2020-03-21');</code> | <code>db.trade.insert({<br />id: 5,<br /> name: 'Doe',<br /> account: 200,<br /> date: '2020-03-21'});</code> |
+| <code>UPDATE trade<br /> SET account = 500<br /> WHERE id = 5</code> | <code>db.trade.update(<br />{id: 5},<br />{ $set: {account: 500}});</code> |
 
 ## More technical info
 
-MySQL supports atomic transactions which means that.you can have several operations within a transaction. MongoDB 4.0 has added support for multi-document transactions making it a powerful open source database in the unstructured space.
+MySQL supports atomic transactions which means that you can have several operations within a transaction. MongoDB 4.0 has added support for multi-document transactions making it a powerful open source database in the unstructured space.
 
-With MySQL once a transaction is complete, the data remains consistent and stable on the disc. This makes it quite suitable for applications which can't bear data loss, though horizontal scalability can be an issue (dividing the dataset and load over multiple additional servers). 'MySQL Cluster' is a new distributed database contribution.
+With MySQL, once a transaction is complete, the data remains consistent and stable on the disc. This makes it quite suitable for applications which can't bear data loss. Horizontal scalability can be an issue though (dividing the dataset and load over multiple additional servers). 'MySQL Cluster' is their new distributed database contribution to help remedy this.
 
 MongoDB's sharding has the ability to break up a collection into subsets of data to store them across multiple shards. This allows the application to grow beyond the resource limits of a standalone server or replica set. It also empowers users with automated redundancy.
-
-Both systems allow full-text searching.
-
-MongoDB much faster. Better if the project is big because of sharding. Better for cloudbased applications.
-
-MySQL is good for high performance on a limited budget. It involves easy and low-maintenance setup. It supports JOIN, atomic transactions  with privilege and password security system. The main issue with MySQL is scalability.
 
 ### Intuition
 
@@ -94,5 +88,9 @@ MySQL now has JSON support but developers are still tied up with multiple layers
 
 Summary
 -------
+
+MongoDB is much faster and better if the project is big because of sharding. It is also better for cloudbased applications.
+
+MySQL is good for high performance on a limited budget. It involves easy and low-maintenance setup. It supports JOIN, atomic transactions with privilege and password security system. The main issue with MySQL is scalability.
 
 Where MongoDB has been selected over MySQL, there have been radical improvements in productivity, performance and scalability. But you cannot drop-in MongoDB as a replacement for legacy applications built around the relational data model and SQL. Organizations that have stable robust applications running on MySql will continue to do so.
