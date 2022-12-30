@@ -32,7 +32,7 @@
         "eslint-plugin-react": "^7.14.3",
         "eslint-plugin-vue": "^5.2.3",
         "javascript-style-guide": "^0.9.10",
-        "mocha": "^6.2.0",
+        "mocha": "^10.2.0",
         "nyc": "^14.1.1",
         "socket.io-client": "^2.2.0",
         "style-loader": "^0.23.1"
